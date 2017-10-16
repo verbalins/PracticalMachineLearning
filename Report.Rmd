@@ -1,0 +1,47 @@
+---
+title: "Predicting workout data"
+author: "Simon Lidberg"
+date: "15 Octobre 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(caret)
+require(dplyr)
+require(readr)
+require(e1071)
+require(ggplot2)
+require(doParallel)
+require(gbm)
+set.seed(1337)
+cl <- makeCluster(10) # Use 10 parallel processes
+registerDoParallel(cl)
+```
+
+## Loading data
+```{r LoadData, cache=TRUE}
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+```
+
+
+## Fitting models
+Fitting a random forest model and a stochastic gradient boosting tree model. Cross validation is used in the training by the built in traincontrol in caret::train.
+
+```{r fittingdata, echo=FALSE, cache=TRUE}
+rfModel <- train(classe~., data = training[,c(-1:-7)], method = "rf", trControl = trainControl(method = "Cv", number = 10, verboseIter = FALSE), na.action = na.exclude)
+
+gbmModel <- train(classe~., data = training[,c(-1:-7)], method = "gbm", trControl = trainControl(method = "Cv", number = 10, verboseIter = FALSE), na.action = na.exclude)
+
+rfModel
+gbmModel
+```
+After reviewing the accuracies, they are quite similar, but we pick the boosted tree model.
+
+## Results
+
+```{r predict}
+gbm.result <- predict(gbmModel, testing)
+```
+
